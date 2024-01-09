@@ -224,22 +224,23 @@ class Signer
   #   </X509Data>
   # </SecurityTokenReference> (optional)
   # </KeyInfo>
-  def x509_data_node(issuer_in_security_token = false)
-    issuer_name_node   = Nokogiri::XML::Node.new('X509IssuerName', document)
-    issuer_name_node.content = cert.issuer.to_s(OpenSSL::X509::Name::RFC2253)
+  def x509_data_node(issuer_in_security_token = false, issuer_serial = true)
+    data_node = Nokogiri::XML::Node.new('X509Data', document)
+    if issuer_serial
+      issuer_name_node = Nokogiri::XML::Node.new('X509IssuerName', document)
+      issuer_name_node.content = cert.issuer.to_s(OpenSSL::X509::Name::RFC2253)
 
-    issuer_number_node = Nokogiri::XML::Node.new('X509SerialNumber', document)
-    issuer_number_node.content = cert.serial
+      issuer_number_node = Nokogiri::XML::Node.new('X509SerialNumber', document)
+      issuer_number_node.content = cert.serial
 
-    issuer_serial_node = Nokogiri::XML::Node.new('X509IssuerSerial', document)
-    issuer_serial_node.add_child(issuer_name_node)
-    issuer_serial_node.add_child(issuer_number_node)
+      issuer_serial_node = Nokogiri::XML::Node.new('X509IssuerSerial', document)
+      issuer_serial_node.add_child(issuer_name_node)
+      issuer_serial_node.add_child(issuer_number_node)
+      data_node.add_child(issuer_serial_node)
+    end
 
     cetificate_node    = Nokogiri::XML::Node.new('X509Certificate', document)
     cetificate_node.content = Base64.encode64(cert.to_der).delete("\n")
-
-    data_node          = Nokogiri::XML::Node.new('X509Data', document)
-    data_node.add_child(issuer_serial_node)
     data_node.add_child(cetificate_node)
 
     if issuer_in_security_token
@@ -255,10 +256,10 @@ class Signer
     set_namespace_for_node(key_info_node, DS_NAMESPACE, ds_namespace_prefix)
     set_namespace_for_node(security_token_reference_node, WSSE_NAMESPACE, ds_namespace_prefix) if issuer_in_security_token
     set_namespace_for_node(data_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_serial_node, DS_NAMESPACE, ds_namespace_prefix)
+    set_namespace_for_node(issuer_serial_node, DS_NAMESPACE, ds_namespace_prefix) if issuer_serial
     set_namespace_for_node(cetificate_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_name_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_number_node, DS_NAMESPACE, ds_namespace_prefix)
+    set_namespace_for_node(issuer_name_node, DS_NAMESPACE, ds_namespace_prefix) if issuer_serial
+    set_namespace_for_node(issuer_number_node, DS_NAMESPACE, ds_namespace_prefix) if issuer_serial
 
     data_node
   end
@@ -295,11 +296,11 @@ class Signer
         wsu_ns ||= namespace_prefix(target_node, WSU_NAMESPACE, 'wsu')
         target_node["#{wsu_ns}:Id"] = id.to_s
       end
-    elsif target_node['Id'].nil?
+    elsif target_node[options.fetch(:id_attr, 'Id')].nil?
       id = options[:id] || "_#{Digest::SHA1.hexdigest(target_node.to_s)}"
-      target_node['Id'] = id.to_s unless id.empty?
+      target_node[options.fetch(:id_attr, 'Id')] = id.to_s unless id.empty?
     else
-      id = options[:id] || target_node['Id']
+      id = options[:id] || target_node[options.fetch(:id_attr, 'Id')]
     end
 
     target_canon = canonicalize(target_node, options[:inclusive_namespaces])
@@ -339,7 +340,7 @@ class Signer
   #
   # Available options:
   # * [+:security_token+]       Serializes certificate in DER format, encodes it with Base64 and inserts it within +<BinarySecurityToken>+ tag
-  # * [+:issuer_serial+]
+  # * [+:x509_data+]
   # * [+:issuer_in_security_token+]
   # * [+:inclusive_namespaces+] Array of namespace prefixes which definitions should be added to signed info node during canonicalization
 
@@ -348,8 +349,8 @@ class Signer
       binary_security_token_node
     end
 
-    if options[:issuer_serial]
-      x509_data_node(options[:issuer_in_security_token])
+    if options[:x509_data]
+      x509_data_node(options[:issuer_in_security_token], options.fetch(:issuer_serial, true))
     end
 
     if options[:inclusive_namespaces]

@@ -104,7 +104,7 @@ describe Signer do
       signer.security_node = signer.document.root
       signer.security_token_id = ""
       signer.digest!(signer.document.root, id: "", **options)
-      signer.sign!(:issuer_serial => true)
+      signer.sign!(x509_data: true)
 
       # File.open(File.join(File.dirname(__FILE__), 'fixtures', 'output_2.xml'), "w") do |f|
       #   f.write signer.document.to_s
@@ -164,7 +164,7 @@ describe Signer do
       signer.ds_namespace_prefix = 'ds'
 
       signer.digest!(signer.document.root, id: "", **options)
-      signer.sign!(issuer_serial: true)
+      signer.sign!(x509_data: true)
 
       # File.open(File.join(File.dirname(__FILE__), 'fixtures', 'output_2_with_ds_prefix.xml'), "w") do |f|
       #   f.write signer.document.to_s
@@ -188,7 +188,7 @@ describe Signer do
     signer.ds_namespace_prefix = 'ds'
 
     signer.digest!(signer.document.root, id: "", no_transform: true)
-    signer.sign!(issuer_serial: true)
+    signer.sign!(x509_data: true)
 
     expect(signer.document.at_xpath('//ds:Transforms', ds: Signer::DS_NAMESPACE)).to be_nil
   end
@@ -214,7 +214,7 @@ describe Signer do
       signer.digest!(signer.document.root.children.first, **options)
 
       signer.digest!(signer.document.root, id: "", **options)
-      signer.sign!(issuer_serial: true)
+      signer.sign!(x509_data: true)
 
       # File.open(File.join(File.dirname(__FILE__), 'fixtures', 'output_2_with_ds_prefix_and_wss_disabled.xml'), "w") do |f|
       #   f.write signer.document.to_s
@@ -267,7 +267,7 @@ describe Signer do
     signer.digest!(signer.document.at_xpath('//soapenv:Body'), id: 'Body', inclusive_namespaces: ['soapenv'])
 
     # sign data from this request
-    signer.sign!(issuer_serial: true, issuer_in_security_token: true)
+    signer.sign!(x509_data: true, issuer_in_security_token: true)
 
     output_xml_file = File.join(File.dirname(__FILE__),
                                 'fixtures',
@@ -289,7 +289,7 @@ describe Signer do
     signer.digest!(signer.document.at_xpath('//soapenv:Body'), id: 'Body', inclusive_namespaces: ['soapenv'])
 
     # sign data from this request
-    signer.sign!(issuer_serial: true)
+    signer.sign!(x509_data: true)
 
     output_xml_file = File.join(File.dirname(__FILE__),
                                 'fixtures',

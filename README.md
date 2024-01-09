@@ -245,5 +245,5 @@ signer.ds_namespace_prefix = 'ds'
 
 If you need to use canonicalization with inclusive namespaces you can pass array of namespace prefixes in `:inclusive_namespaces` option in both `digest!` and `sign!` methods.
 
-  * [:issuer_serial] - flag to include a `X509Data` node to include information from a `X509Certificate`
+  * [:x509_data] - flag to include a `X509Data` node to include information from a `X509Certificate`
   * [:issuer_in_security_token] - flag to include the `X509Data` inside a `SecurityTokenReference` element
