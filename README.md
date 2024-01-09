@@ -4,6 +4,17 @@
 
 WS Security XML Certificate signing for Ruby
 
+### Changes from upstream
+
+* When signing, to include `<X509Data>...</X509Data>` pass the option `:x509_data` rather than `:issuer_serial`
+* The `:issuer_serial` option is still available, but it specifically adds the `<X509IssuerSerial>` element within the X509 data. `true` by default.
+* When adding digests, the attribute name of the of the target "id" can be specified if it should be something other than `Id`, eg:
+```ruby
+# signer = Signer.new(...)
+signer.digest!(signer.document.at_xpath("//Body"), id_attr: 'xml:id', id: 'foo') # Adds xml:id="foo" attribute to <Body>
+
+```
+
 ## Installation
 
 ```bash
